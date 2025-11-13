@@ -1,0 +1,127 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Build output
+bin/
+dist/
+build/
+out/
+
+# Kubernetes Generated files
+config/crd/bases/
+config/webhook/
+config/rbac/role.yaml
+config/manager/manager.yaml
+
+# Controller-gen temporary files
+*.kubebuilder.io_*
+
+# Kustomize
+kustomization.yaml
+
+# Testbin
+testbin/
+kubebuilder/
+etcd/
+
+# IDE specific files
+# JetBrains IDEs (IntelliJ, GoLand, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ebs.txt
+
+# Linux
+.directory
+.Trash-*
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.tar
+*.tar.gz
+
+# Helm
+charts/
+*.tgz
+
+# Local development
+hack/tools/bin/
+
+# Coverage reports
+coverage.txt
+coverage.html
+*.cover
+
+# Profiling data
+*.prof
+*.pprof
+
+# Debug binaries
+__debug_bin
+
+# Air (live reload for Go)
+tmp/
+
+# Compiled Object files
+*.o
+*.a
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+
+# Local configuration overrides
+config/local/
+*.local.yaml
