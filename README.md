@@ -33,33 +33,11 @@ Portal Expose Controller bridges Kubernetes and the Portal network, enabling you
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  Kubernetes Cluster                 │
-│                                                     │
-│  ┌──────────────┐      ┌─────────────────────┐      │
-│  │ PortalExpose │─────▶│ Expose Controller   │      │
-│  │   (CRD)      │      │   (watches CRDs)    │      │
-│  └──────────────┘      └──────────┬──────────┘      │
-│                                   │                 │
-│                                   ▼                 │
-│  ┌──────────────┐      ┌─────────────────────┐      │
-│  │ Your Service │─────▶│ Tunnel Deployment   │      │
-│  │ (app pods)   │      │   (portal-tunnel)   │      │
-│  └──────────────┘      └─────────────────────┘      │
-└─────────────────────────────────────────────────────┘
-                                   │
-                                   │ WebSocket (WSS)
-                                   ▼
-                        ┌─────────────────────┐
-                        │   Portal Relay      │
-                        │  (gosuda.org, etc)  │
-                        └──────────┬──────────┘
-                                   │
-                                   ▼
-                            Public Internet
-                     (https://myapp.portal.gosuda.org)
-```
+Portal Expose Controller uses a two-resource model: `TunnelClass` defines tunnel configuration, and `PortalExpose` specifies which services to expose.
+
+![Architecture Diagram](docs/architecture.png)
+
+**Learn more:** See [docs/architecture.md](docs/architecture.md) for detailed architecture documentation including components, data flow, design decisions, and security considerations.
 
 ## Quick Start
 
@@ -73,10 +51,10 @@ Portal Expose Controller bridges Kubernetes and the Portal network, enabling you
 
 ```bash
 # Install CRDs
-kubectl apply -f https://raw.githubusercontent.com/YOUR_ORG/portal-expose-controller/main/config/crd/bases/portal.gosuda.org_portalexposes.yaml
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/config/crd/bases/portal.gosuda.org_portalexposes.yaml
 
 # Install controller
-kubectl apply -f https://raw.githubusercontent.com/YOUR_ORG/portal-expose-controller/main/config/deploy/controller.yaml
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/config/deploy/controller.yaml
 ```
 
 ### Expose Your First Service
@@ -86,31 +64,85 @@ kubectl apply -f https://raw.githubusercontent.com/YOUR_ORG/portal-expose-contro
 kubectl create deployment hello-app --image=gcr.io/google-samples/hello-app:1.0
 kubectl expose deployment hello-app --port=8080
 
+# Install default TunnelClass
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/examples/tunnel-class.yaml
+
 # Expose it through Portal
-cat <<EOF | kubectl apply -f -
-apiVersion: portal.gosuda.org/v1alpha1
-kind: PortalExpose
-metadata:
-  name: hello-app-portal
-spec:
-  serviceName: hello-app
-  servicePort: 8080
-  portalName: my-hello-app
-  relayURLs:
-    - wss://portal.gosuda.org/relay
-EOF
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/examples/basic-expose.yaml
 
 # Check status
-kubectl get portalexpose hello-app-portal
+kubectl get portalexpose hello-app
 ```
 
-Your app should now be accessible at `https://my-hello-app.portal.gosuda.org`
+Your app should now be accessible at `https://hello-app.portal.gosuda.org`
 
 ## Usage
 
+Portal Expose uses two main resources: `TunnelClass` for tunnel configuration and `PortalExpose` for service exposure.
+
+### TunnelClass
+
+`TunnelClass` defines the tunnel pod configuration. The controller manages all tunnel internals (image, encryption, timeouts) - you only choose performance tier and placement.
+
+#### Basic Example
+
+```yaml
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: default
+  annotations:
+    portal.gosuda.org/is-default-class: "true"
+spec:
+  replicas: 1
+  size: small  # small, medium, large
+```
+
+See [examples/tunnel-class.yaml](examples/tunnel-class.yaml) for the default configuration.
+
+#### Production Example
+
+```yaml
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: production
+spec:
+  replicas: 3
+  size: large
+  nodeSelector:
+    workload-type: tunnel
+  tolerations:
+    - key: tunnel
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+```
+
+See [examples/tunnel-class-production.yaml](examples/tunnel-class-production.yaml) for production setup.
+
+#### TunnelClass Spec Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `replicas` | int | Yes | Number of tunnel pod replicas |
+| `size` | string | Yes | Performance tier: `small`, `medium`, or `large` |
+| `nodeSelector` | map | No | Node selection constraints |
+| `tolerations` | []object | No | Pod tolerations for node taints |
+
+#### Size Reference
+
+| Size | CPU Request | CPU Limit | Memory Request | Memory Limit | Use Case |
+|------|-------------|-----------|----------------|--------------|----------|
+| `small` | 100m | 500m | 128Mi | 512Mi | Development, low traffic |
+| `medium` | 250m | 1000m | 256Mi | 1Gi | Production, moderate traffic |
+| `large` | 500m | 2000m | 512Mi | 2Gi | High traffic, critical services |
+
+**Note:** The controller controls tunnel image, encryption (always TLS), and connection settings. Users cannot customize these for security and consistency.
+
 ### PortalExpose CRD
 
-The `PortalExpose` custom resource defines how a Kubernetes service should be exposed through Portal.
+`PortalExpose` defines how a Kubernetes service should be exposed through Portal.
 
 #### Basic Example
 
@@ -118,22 +150,22 @@ The `PortalExpose` custom resource defines how a Kubernetes service should be ex
 apiVersion: portal.gosuda.org/v1alpha1
 kind: PortalExpose
 metadata:
-  name: my-app-portal
-  namespace: default
+  name: hello-app
 spec:
-  # Required: Service to expose
-  serviceName: my-app-service
-  servicePort: 8080
-
-  # Required: Portal subdomain name
-  portalName: my-awesome-app
-
-  # Required: Portal relay endpoints
-  relayURLs:
-    - wss://portal.gosuda.org/relay
+  app:
+    name: hello-app
+    service:
+      name: hello-app
+      port: 8080
+  relay:
+    targets:
+      - name: default
+        url: wss://portal.gosuda.org/relay
 ```
 
-#### Advanced Example
+See [examples/basic-expose.yaml](examples/basic-expose.yaml) for a minimal example.
+
+#### Production Example with Multiple Relays
 
 ```yaml
 apiVersion: portal.gosuda.org/v1alpha1
@@ -142,45 +174,33 @@ metadata:
   name: my-app-portal
   namespace: production
 spec:
-  serviceName: my-app-service
-  servicePort: 8080
-  portalName: my-awesome-app
-
-  # Multiple relays for redundancy
-  relayURLs:
-    - wss://portal.gosuda.org/relay
-    - wss://portal.thumbgo.kr/relay
-
-  # Tunnel configuration
-  tunnel:
-    replicas: 2  # Run multiple tunnel instances
-    image: portal-tunnel:v1.0.0  # Custom tunnel image
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-
-  # Encryption settings
-  encryption:
-    enabled: true
-    protocol: tls
+  tunnelClassName: production
+  app:
+    name: my-awesome-app
+    service:
+      name: my-app-service
+      port: 8080
+  relay:
+    targets:
+      - name: gosuda-portal
+        url: wss://portal.gosuda.org/relay
+      - name: thumbgo-portal
+        url: wss://portal.thumbgo.kr/relay
 ```
 
-#### Spec Fields
+See [examples/portal-expose.yaml](examples/portal-expose.yaml) and [examples/multi-relay-expose.yaml](examples/multi-relay-expose.yaml) for more examples.
+
+#### PortalExpose Spec Fields
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `serviceName` | string | Yes | Name of the Kubernetes Service to expose |
-| `servicePort` | int | Yes | Port number of the service |
-| `portalName` | string | Yes | Subdomain name on Portal (e.g., "myapp" → myapp.portal.gosuda.org) |
-| `relayURLs` | []string | Yes | List of Portal relay WebSocket URLs |
-| `tunnel.replicas` | int | No | Number of tunnel pod replicas (default: 1) |
-| `tunnel.image` | string | No | Custom portal-tunnel image |
-| `tunnel.resources` | object | No | Resource requests/limits for tunnel pods |
-| `encryption.enabled` | bool | No | Enable end-to-end encryption (default: true) |
+| `tunnelClassName` | string | No | TunnelClass to use (default: `default`) |
+| `app.name` | string | Yes | Application name (becomes subdomain) |
+| `app.service.name` | string | Yes | Kubernetes Service name to expose |
+| `app.service.port` | int | Yes | Service port number |
+| `relay.targets` | []object | Yes | List of Portal relay endpoints |
+| `relay.targets[].name` | string | Yes | Relay identifier name |
+| `relay.targets[].url` | string | Yes | WebSocket URL (wss://) |
 
 #### Status Fields
 
@@ -193,15 +213,35 @@ status:
   tunnelPods:
     ready: 2
     total: 2
+  relay:
+    connected:
+      - name: gosuda-portal
+        status: Connected
+        connectedAt: "2025-01-14T10:30:00Z"
+      - name: thumbgo-portal
+        status: Connected
+        connectedAt: "2025-01-14T10:30:05Z"
   conditions:
     - type: TunnelDeployed
       status: "True"
-      lastTransitionTime: "2025-01-13T10:30:00Z"
-    - type: Connected
+      lastTransitionTime: "2025-01-14T10:30:00Z"
+    - type: RelayConnected
       status: "True"
-      lastTransitionTime: "2025-01-13T10:30:15Z"
-      message: "Connected to 2 relay(s)"
+      message: "Connected to 2/2 relays"
 ```
+
+### Examples
+
+All example configurations are available in the [examples/](examples/) directory:
+
+- **[basic-expose.yaml](examples/basic-expose.yaml)** - Minimal PortalExpose configuration
+- **[portal-expose.yaml](examples/portal-expose.yaml)** - Production setup with multiple relays
+- **[multi-relay-expose.yaml](examples/multi-relay-expose.yaml)** - Advanced multi-region relay setup
+- **[tunnel-class.yaml](examples/tunnel-class.yaml)** - Default TunnelClass configuration
+- **[tunnel-class-dev.yaml](examples/tunnel-class-dev.yaml)** - Development/minimal TunnelClass
+- **[tunnel-class-production.yaml](examples/tunnel-class-production.yaml)** - Production TunnelClass with HA
+
+See [examples/README.md](examples/README.md) for detailed usage instructions.
 
 ### Ingress Support (Coming Soon)
 
@@ -235,7 +275,7 @@ spec:
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_ORG/portal-expose-controller.git
+git clone https://github.com/gosuda/portal-expose.git
 cd portal-expose
 
 # Install CRDs
@@ -252,7 +292,7 @@ make deploy IMG=your-registry/portal-expose:latest
 ### Using Helm (Coming Soon)
 
 ```bash
-helm repo add portal-expose https://YOUR_ORG.github.io/portal-expose-controller
+helm repo add portal-expose https://gosuda.github.io/portal-expose
 helm install portal-expose portal-expose/portal-expose
 ```
 
@@ -264,16 +304,20 @@ The controller can be configured via environment variables or command-line flags
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TUNNEL_IMAGE` | `portal-tunnel:latest` | Default tunnel container image |
+| `TUNNEL_IMAGE` | `ghcr.io/gosuda/portal-tunnel:latest` | Tunnel container image (managed by controller) |
+| `TUNNEL_VERSION` | `latest` | Tunnel image version tag |
 | `DEFAULT_RELAY_URL` | `wss://portal.gosuda.org/relay` | Default relay if not specified |
 | `METRICS_ADDR` | `:8080` | Metrics endpoint address |
 | `HEALTH_PROBE_ADDR` | `:8081` | Health probe endpoint address |
+
+**Note:** Tunnel image and version are controlled by the controller and cannot be overridden by users for security and consistency.
 
 ### RBAC Permissions
 
 The controller requires the following permissions:
 
 - `portalexposes`: all verbs (create, get, list, watch, update, delete)
+- `tunnelclasses`: all verbs (create, get, list, watch, update, delete)
 - `deployments`: create, get, list, watch, update, delete
 - `services`: get, list, watch
 - `events`: create, patch
@@ -309,13 +353,23 @@ make run
 portal-expose/
 ├── api/
 │   └── v1alpha1/
-│       └── portalexpose_types.go    # CRD definitions
+│       ├── portalexpose_types.go    # PortalExpose CRD definition
+│       └── tunnelclass_types.go     # TunnelClass CRD definition
 ├── controllers/
-│   └── portalexpose_controller.go   # Main controller logic
+│   ├── portalexpose_controller.go   # PortalExpose controller logic
+│   └── tunnelclass_controller.go    # TunnelClass controller logic
 ├── config/
 │   ├── crd/                         # CRD manifests
 │   ├── rbac/                        # RBAC configurations
 │   └── manager/                     # Controller deployment
+├── examples/                        # Example configurations
+│   ├── README.md                    # Examples documentation
+│   ├── basic-expose.yaml            # Minimal PortalExpose
+│   ├── portal-expose.yaml           # Production PortalExpose
+│   ├── multi-relay-expose.yaml      # Multi-relay setup
+│   ├── tunnel-class.yaml            # Default TunnelClass
+│   ├── tunnel-class-dev.yaml        # Development TunnelClass
+│   └── tunnel-class-production.yaml # Production TunnelClass
 ├── pkg/
 │   └── tunnel/                      # Tunnel management logic
 └── main.go                          # Controller entry point
@@ -325,8 +379,11 @@ portal-expose/
 
 ### Phase 1: Core Functionality (Current)
 - [x] Project structure and design
+- [x] CRD specifications (PortalExpose, TunnelClass)
+- [x] Example configurations
+- [ ] TunnelClass CRD implementation
 - [ ] PortalExpose CRD implementation
-- [ ] Basic controller logic
+- [ ] Controller logic (TunnelClass & PortalExpose)
 - [ ] Tunnel deployment management
 - [ ] Status reporting
 - [ ] E2E testing
