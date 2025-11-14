@@ -1,0 +1,40 @@
+# Example with multiple relays for redundancy
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: critical-app
+  namespace: production
+spec:
+  tunnelClassName: production
+
+  app:
+    name: critical-service
+    service:
+      name: api-service
+      port: 8080
+
+  # Multiple relays for high availability
+  relay:
+    targets:
+      - name: primary-relay
+        url: wss://portal.gosuda.org/relay
+      - name: backup-relay
+        url: wss://portal.thumbgo.kr/relay
+      - name: eu-relay
+        url: wss://portal-eu.gosuda.org/relay
+
+# Expected status:
+# status:
+#   phase: Ready
+#   publicURL: https://critical-service.portal.gosuda.org
+#   tunnelPods:
+#     ready: 3
+#     total: 3
+#   relay:
+#     connected:
+#       - name: primary-relay
+#         status: Connected
+#       - name: backup-relay
+#         status: Connected
+#       - name: eu-relay
+#         status: Connected

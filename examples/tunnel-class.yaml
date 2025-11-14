@@ -1,0 +1,11 @@
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: default
+  annotations:
+    portal.gosuda.org/is-default-class: "true"
+spec:
+  # Performance tier: small, medium, large
+  # Controller manages tunnel image, encryption, and connection settings
+  replicas: 1
+  size: small

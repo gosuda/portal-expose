@@ -1,0 +1,19 @@
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: my-app-portal
+  namespace: production
+spec:
+  tunnelClassName: default
+  app:
+    name: my-awesome-app
+    service:
+      name: my-app-service
+      port: 8080
+  # Multiple relays for redundancy
+  relay:
+    targets:
+      - name: gosuda-portal
+        url: wss://portal.gosuda.org/relay
+      - name: thumbgo-portal
+        url: wss://portal.thumbgo.kr/relay

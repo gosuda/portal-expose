@@ -1,0 +1,8 @@
+# Development TunnelClass - minimal resources
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: dev
+spec:
+  replicas: 1
+  size: small

@@ -1,0 +1,20 @@
+# Production-ready TunnelClass with high availability
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: production
+spec:
+  # Multiple replicas for high availability
+  replicas: 3
+  size: large
+
+  # Optional: Schedule on specific nodes
+  nodeSelector:
+    workload-type: tunnel
+
+  # Optional: Allow scheduling on dedicated tunnel nodes
+  tolerations:
+    - key: tunnel
+      operator: Equal
+      value: "true"
+      effect: NoSchedule

@@ -1,0 +1,19 @@
+# Minimal example - exposes a simple application
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: hello-app
+spec:
+  # Uses default TunnelClass if not specified
+  app:
+    name: hello-app
+    service:
+      name: hello-app
+      port: 8080
+  relay:
+    targets:
+      - name: default
+        url: wss://portal.gosuda.org/relay
+
+# Expected result:
+# Public URL: https://hello-app.portal.gosuda.org
