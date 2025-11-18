@@ -1,0 +1,123 @@
+# Microservices example - Multiple services exposed through Portal
+# Demonstrates exposing multiple microservices from the same cluster
+---
+# Shared TunnelClass for all microservices
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: microservices
+  annotations:
+    description: "Balanced configuration for microservices"
+spec:
+  replicas: 2
+  size: medium
+
+  # Schedule on compute nodes
+  nodeSelector:
+    node-role: compute
+
+---
+# API Gateway service
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: api-gateway
+  namespace: microservices
+  labels:
+    app: api-gateway
+    tier: gateway
+spec:
+  tunnelClassName: microservices
+
+  app:
+    name: api
+    service:
+      name: api-gateway
+      port: 443
+
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay
+      - name: backup
+        url: wss://portal.thumbgo.kr/relay
+
+---
+# User service
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: user-service
+  namespace: microservices
+  labels:
+    app: user-service
+    tier: backend
+spec:
+  tunnelClassName: microservices
+
+  app:
+    name: users
+    service:
+      name: user-service
+      port: 8080
+
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay
+
+---
+# Order service
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: order-service
+  namespace: microservices
+  labels:
+    app: order-service
+    tier: backend
+spec:
+  tunnelClassName: microservices
+
+  app:
+    name: orders
+    service:
+      name: order-service
+      port: 8080
+
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay
+
+---
+# WebSocket/Real-time service
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: websocket-service
+  namespace: microservices
+  labels:
+    app: websocket-service
+    tier: realtime
+spec:
+  tunnelClassName: microservices
+
+  app:
+    name: ws
+    service:
+      name: websocket-service
+      port: 8080
+
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay
+      - name: backup
+        url: wss://portal.thumbgo.kr/relay
+
+# Expected public URLs:
+# - https://api.portal.gosuda.org       (API Gateway)
+# - https://users.portal.gosuda.org     (User Service)
+# - https://orders.portal.gosuda.org    (Order Service)
+# - https://ws.portal.gosuda.org        (WebSocket Service)

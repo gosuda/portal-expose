@@ -355,9 +355,11 @@ portal-expose/
 │   └── v1alpha1/
 │       ├── portalexpose_types.go    # PortalExpose CRD definition
 │       └── tunnelclass_types.go     # TunnelClass CRD definition
-├── controllers/
-│   ├── portalexpose_controller.go   # PortalExpose controller logic
-│   └── tunnelclass_controller.go    # TunnelClass controller logic
+├── internal/
+│   ├── controller/
+│   │   ├── portalexpose_controller.go   # PortalExpose controller logic
+│   │   └── tunnelclass_controller.go    # TunnelClass controller logic
+│   └── tunnel/                          # Tunnel management logic
 ├── config/
 │   ├── crd/                         # CRD manifests
 │   ├── rbac/                        # RBAC configurations
@@ -370,30 +372,29 @@ portal-expose/
 │   ├── tunnel-class.yaml            # Default TunnelClass
 │   ├── tunnel-class-dev.yaml        # Development TunnelClass
 │   └── tunnel-class-production.yaml # Production TunnelClass
-├── pkg/
-│   └── tunnel/                      # Tunnel management logic
 └── main.go                          # Controller entry point
 ```
 
 ## Roadmap
 
-### Phase 1: Core Functionality (Current)
+### Phase 1: Core Functionality (Complete)
 - [x] Project structure and design
 - [x] CRD specifications (PortalExpose, TunnelClass)
 - [x] Example configurations
-- [ ] TunnelClass CRD implementation
-- [ ] PortalExpose CRD implementation
-- [ ] Controller logic (TunnelClass & PortalExpose)
-- [ ] Tunnel deployment management
-- [ ] Status reporting
+- [x] TunnelClass CRD implementation
+- [x] PortalExpose CRD implementation
+- [x] Controller logic (TunnelClass & PortalExpose)
+- [x] Tunnel deployment management
+- [x] Status reporting
+- [x] Multi-relay support
 - [ ] E2E testing
 
 ### Phase 2: Advanced Features
-- [ ] Multi-relay failover
+- [x] Multi-relay failover (basic support)
 - [ ] Automatic relay selection
 - [ ] Metrics and monitoring (Prometheus)
 - [ ] Helm chart
-- [ ] Horizontal tunnel scaling
+- [ ] Advanced tunnel scaling strategies
 
 ### Phase 3: Ingress Support
 - [ ] Ingress controller implementation

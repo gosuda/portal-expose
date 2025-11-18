@@ -1,0 +1,17 @@
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  labels:
+    app.kubernetes.io/name: portal-expose
+    app.kubernetes.io/managed-by: kustomize
+  name: hello-portal
+spec:
+  app:
+    name: hello-app
+    service:
+      name: hello
+      port: 8080
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay

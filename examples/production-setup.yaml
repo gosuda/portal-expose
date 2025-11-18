@@ -1,0 +1,101 @@
+# Complete production setup example with high availability
+# This demonstrates a production deployment with:
+# - Multiple relay redundancy
+# - High availability TunnelClass
+# - Proper resource allocation
+---
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: production
+  annotations:
+    description: "Production-grade tunnel configuration with HA"
+spec:
+  # 3 replicas for high availability
+  replicas: 3
+
+  # Large resources for production workloads
+  size: large
+
+  # Schedule on dedicated tunnel nodes
+  nodeSelector:
+    workload-type: tunnel
+    environment: production
+
+  # Allow scheduling on tainted nodes
+  tolerations:
+    - key: tunnel
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+    - key: dedicated
+      operator: Equal
+      value: tunnel
+      effect: NoSchedule
+
+---
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: api-production
+  namespace: production
+  labels:
+    app: api-service
+    environment: production
+spec:
+  # Use production TunnelClass
+  tunnelClassName: production
+
+  app:
+    # Application name (becomes subdomain)
+    name: api
+
+    # Reference to Kubernetes Service
+    service:
+      name: api-service
+      port: 443
+
+  # Multiple relays for redundancy and geo-distribution
+  relay:
+    targets:
+      # Primary relay (US)
+      - name: us-primary
+        url: wss://portal.gosuda.org/relay
+
+      # Secondary relay (Europe)
+      - name: eu-backup
+        url: wss://portal-eu.gosuda.org/relay
+
+      # Tertiary relay (Asia)
+      - name: asia-backup
+        url: wss://portal-asia.gosuda.org/relay
+
+# Expected status when healthy:
+# status:
+#   phase: Ready
+#   publicURL: https://api.portal.gosuda.org
+#   tunnelPods:
+#     ready: 3
+#     total: 3
+#   relay:
+#     connected:
+#       - name: us-primary
+#         status: Connected
+#         connectedAt: "2025-01-19T10:00:00Z"
+#       - name: eu-backup
+#         status: Connected
+#         connectedAt: "2025-01-19T10:00:01Z"
+#       - name: asia-backup
+#         status: Connected
+#         connectedAt: "2025-01-19T10:00:02Z"
+#   conditions:
+#     - type: ServiceExists
+#       status: "True"
+#     - type: TunnelDeploymentReady
+#       status: "True"
+#       message: "All 3/3 tunnel pods ready"
+#     - type: RelayConnected
+#       status: "True"
+#       message: "Connected to 3/3 relays"
+#     - type: Available
+#       status: "True"

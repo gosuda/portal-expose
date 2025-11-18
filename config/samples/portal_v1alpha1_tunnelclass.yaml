@@ -1,0 +1,12 @@
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  labels:
+    app.kubernetes.io/name: portal-expose
+    app.kubernetes.io/managed-by: kustomize
+  name: default
+  annotations:
+    portal.gosuda.org/is-default-class: "true"
+spec:
+  replicas: 1
+  size: small

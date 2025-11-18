@@ -22,11 +22,11 @@ Standard kubebuilder project layout:
 
 **Purpose**: Initialize Kubernetes controller project with kubebuilder
 
-- [ ] T001 Initialize Go module with `go mod init github.com/gosuda/portal-expose`
-- [ ] T002 Run `kubebuilder init --domain portal.gosuda.org --repo github.com/gosuda/portal-expose` to scaffold project
-- [ ] T003 [P] Create .gitignore for Go projects (bin/, testbin/, cover.out)
-- [ ] T004 [P] Create initial Makefile targets (build, test, run, docker-build, deploy)
-- [ ] T005 [P] Set up GitHub Actions CI workflow in .github/workflows/ci.yml for lint, test, build
+- [X] T001 Initialize Go module with `go mod init github.com/gosuda/portal-expose`
+- [X] T002 Run `kubebuilder init --domain portal.gosuda.org --repo github.com/gosuda/portal-expose` to scaffold project
+- [X] T003 [P] Create .gitignore for Go projects (bin/, testbin/, cover.out)
+- [X] T004 [P] Create initial Makefile targets (build, test, run, docker-build, deploy)
+- [X] T005 [P] Set up GitHub Actions CI workflow in .github/workflows/ci.yml for lint, test, build
 
 ---
 
@@ -36,18 +36,18 @@ Standard kubebuilder project layout:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 [P] Create PortalExpose CRD using `kubebuilder create api --group portal --version v1alpha1 --kind PortalExpose`
-- [ ] T007 [P] Create TunnelClass CRD using `kubebuilder create api --group portal --version v1alpha1 --kind TunnelClass`
-- [ ] T008 [P] Define PortalExpose spec types in api/v1alpha1/portalexpose_types.go (AppSpec, ServiceRef, RelayTarget)
-- [ ] T009 [P] Define PortalExpose status types in api/v1alpha1/portalexpose_types.go (Phase, PublicURL, TunnelPodStatus, RelayConnectionStatus)
-- [ ] T010 [P] Define TunnelClass spec types in api/v1alpha1/tunnelclass_types.go (Replicas, Size, NodeSelector, Tolerations)
-- [ ] T011 [P] Add CRD validation markers to PortalExpose in api/v1alpha1/portalexpose_types.go (kubebuilder:validation)
-- [ ] T012 [P] Add CRD validation markers to TunnelClass in api/v1alpha1/tunnelclass_types.go (size enum, replicas minimum)
-- [ ] T013 Run `make manifests` to generate CRD YAML in config/crd/bases/
-- [ ] T014 Run `make generate` to generate DeepCopy methods in api/v1alpha1/zz_generated.deepcopy.go
-- [ ] T015 [P] Implement finalizer utilities in internal/util/finalizer.go (AddFinalizer, RemoveFinalizer, HasFinalizer)
-- [ ] T016 [P] Implement condition utilities in internal/util/conditions.go (SetCondition, FindCondition, IsConditionTrue)
-- [ ] T017 [P] Create controller test suite setup in controllers/suite_test.go with envtest configuration
+- [X] T006 [P] Create PortalExpose CRD using `kubebuilder create api --group portal --version v1alpha1 --kind PortalExpose`
+- [X] T007 [P] Create TunnelClass CRD using `kubebuilder create api --group portal --version v1alpha1 --kind TunnelClass`
+- [X] T008 [P] Define PortalExpose spec types in api/v1alpha1/portalexpose_types.go (AppSpec, ServiceRef, RelayTarget)
+- [X] T009 [P] Define PortalExpose status types in api/v1alpha1/portalexpose_types.go (Phase, PublicURL, TunnelPodStatus, RelayConnectionStatus)
+- [X] T010 [P] Define TunnelClass spec types in api/v1alpha1/tunnelclass_types.go (Replicas, Size, NodeSelector, Tolerations)
+- [X] T011 [P] Add CRD validation markers to PortalExpose in api/v1alpha1/portalexpose_types.go (kubebuilder:validation)
+- [X] T012 [P] Add CRD validation markers to TunnelClass in api/v1alpha1/tunnelclass_types.go (size enum, replicas minimum)
+- [X] T013 Run `make manifests` to generate CRD YAML in config/crd/bases/
+- [X] T014 Run `make generate` to generate DeepCopy methods in api/v1alpha1/zz_generated.deepcopy.go
+- [X] T015 [P] Implement finalizer utilities in internal/util/finalizer.go (AddFinalizer, RemoveFinalizer, HasFinalizer)
+- [X] T016 [P] Implement condition utilities in internal/util/conditions.go (SetCondition, FindCondition, IsConditionTrue)
+- [X] T017 [P] Create controller test suite setup in controllers/suite_test.go with envtest configuration
 
 **Checkpoint**: Foundation ready - CRDs defined, utilities available, user story implementation can begin
 
@@ -61,21 +61,21 @@ Standard kubebuilder project layout:
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Implement Deployment builder in internal/tunnel/deployment.go (BuildDeployment function)
-- [ ] T019 [P] [US1] Implement size-to-resources mapping in internal/tunnel/deployment.go (GetResourcesForSize: small/medium/large)
-- [ ] T020 [P] [US1] Implement public URL construction in internal/tunnel/status.go (ConstructPublicURL from relay domain + app name)
-- [ ] T021 [P] [US1] Implement phase computation logic in internal/tunnel/status.go (ComputePhase based on pod readiness)
-- [ ] T022 [US1] Implement PortalExpose controller reconciliation scaffold in controllers/portalexpose_controller.go
-- [ ] T023 [US1] Add finalizer management to PortalExpose reconciliation in controllers/portalexpose_controller.go (add on create, remove on delete)
-- [ ] T024 [US1] Implement Service validation in controllers/portalexpose_controller.go (check Service exists)
-- [ ] T025 [US1] Implement tunnel Deployment creation in controllers/portalexpose_controller.go (create if not exists)
-- [ ] T026 [US1] Implement tunnel Deployment ownership in controllers/portalexpose_controller.go (set OwnerReferences)
-- [ ] T027 [US1] Implement status update logic in controllers/portalexpose_controller.go (phase, publicURL, tunnelPods, conditions)
-- [ ] T028 [US1] Implement deletion cleanup in controllers/portalexpose_controller.go (delete Deployment, remove finalizer)
-- [ ] T029 [US1] Add Deployment watch to controller in controllers/portalexpose_controller.go (enqueue PortalExpose on Deployment changes)
-- [ ] T030 [US1] Add Service watch to controller in controllers/portalexpose_controller.go (enqueue PortalExposes referencing Service)
-- [ ] T031 [US1] Implement Kubernetes Event emission in controllers/portalexpose_controller.go (Created, Ready, Failed events)
-- [ ] T032 [US1] Add structured logging to reconciliation in controllers/portalexpose_controller.go (Info, Error logs with context)
+- [X] T018 [P] [US1] Implement Deployment builder in internal/tunnel/deployment.go (BuildDeployment function)
+- [X] T019 [P] [US1] Implement size-to-resources mapping in internal/tunnel/deployment.go (GetResourcesForSize: small/medium/large)
+- [X] T020 [P] [US1] Implement public URL construction in internal/tunnel/status.go (ConstructPublicURL from relay domain + app name)
+- [X] T021 [P] [US1] Implement phase computation logic in internal/tunnel/status.go (ComputePhase based on pod readiness)
+- [X] T022 [US1] Implement PortalExpose controller reconciliation scaffold in controllers/portalexpose_controller.go
+- [X] T023 [US1] Add finalizer management to PortalExpose reconciliation in controllers/portalexpose_controller.go (add on create, remove on delete)
+- [X] T024 [US1] Implement Service validation in controllers/portalexpose_controller.go (check Service exists)
+- [X] T025 [US1] Implement tunnel Deployment creation in controllers/portalexpose_controller.go (create if not exists)
+- [X] T026 [US1] Implement tunnel Deployment ownership in controllers/portalexpose_controller.go (set OwnerReferences)
+- [X] T027 [US1] Implement status update logic in controllers/portalexpose_controller.go (phase, publicURL, tunnelPods, conditions)
+- [X] T028 [US1] Implement deletion cleanup in controllers/portalexpose_controller.go (delete Deployment, remove finalizer)
+- [X] T029 [US1] Add Deployment watch to controller in controllers/portalexpose_controller.go (enqueue PortalExpose on Deployment changes)
+- [X] T030 [US1] Add Service watch to controller in controllers/portalexpose_controller.go (enqueue PortalExposes referencing Service)
+- [X] T031 [US1] Implement Kubernetes Event emission in controllers/portalexpose_controller.go (Created, Ready, Failed events)
+- [X] T032 [US1] Add structured logging to reconciliation in controllers/portalexpose_controller.go (Info, Error logs with context)
 
 ### Integration Tests for User Story 1
 

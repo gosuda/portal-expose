@@ -1,0 +1,138 @@
+# Quick Start Example
+# Copy and paste this to get started immediately with Portal Expose
+#
+# Prerequisites:
+# 1. kubectl configured with access to your cluster
+# 2. Portal Expose controller installed (make install)
+# 3. A service to expose (this example uses nginx)
+#
+# Usage:
+#   kubectl apply -f examples/quick-start.yaml
+#   kubectl get portalexpose hello-world -o jsonpath='{.status.publicURL}'
+---
+# Step 1: Create a default TunnelClass
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: default
+  annotations:
+    portal.gosuda.org/is-default-class: "true"
+spec:
+  replicas: 1
+  size: small
+
+---
+# Step 2: Create a sample application (nginx)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: hello-world-content
+
+---
+# Step 3: Create ConfigMap with custom HTML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-world-content
+  namespace: default
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Hello from Portal Expose!</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container {
+                text-align: center;
+                padding: 40px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 10px;
+                backdrop-filter: blur(10px);
+            }
+            h1 { font-size: 3em; margin: 0; }
+            p { font-size: 1.2em; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎉 Success!</h1>
+            <p>Your service is now accessible through Portal Expose</p>
+        </div>
+    </body>
+    </html>
+
+---
+# Step 4: Create Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world
+  namespace: default
+spec:
+  selector:
+    app: hello-world
+  ports:
+  - port: 80
+    targetPort: 80
+
+---
+# Step 5: Expose via Portal
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: hello-world
+  namespace: default
+  labels:
+    app: hello-world
+spec:
+  app:
+    name: hello-world
+    service:
+      name: hello-world
+      port: 80
+
+  relay:
+    targets:
+      - name: primary
+        url: wss://portal.gosuda.org/relay
+
+# After applying, check the public URL:
+#   kubectl get portalexpose hello-world -o jsonpath='{.status.publicURL}'
+#
+# Expected output:
+#   https://hello-world.portal.gosuda.org
+#
+# Then visit the URL in your browser to see your application!

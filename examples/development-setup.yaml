@@ -1,0 +1,59 @@
+# Development/testing setup with minimal resources
+# Perfect for local development, testing, or cost-sensitive environments
+---
+apiVersion: portal.gosuda.org/v1alpha1
+kind: TunnelClass
+metadata:
+  name: dev
+  annotations:
+    description: "Lightweight configuration for development and testing"
+spec:
+  # Single replica for development
+  replicas: 1
+
+  # Minimal resources
+  size: small
+
+# Optional: nodeSelector for dev nodes
+#  nodeSelector:
+#    environment: development
+
+---
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: test-app
+  namespace: default
+  labels:
+    app: test-app
+    environment: development
+spec:
+  # Use dev TunnelClass
+  tunnelClassName: dev
+
+  app:
+    # Test application
+    name: test-app
+
+    # Reference to test Service
+    service:
+      name: test-service
+      port: 8080
+
+  # Single relay for development
+  relay:
+    targets:
+      - name: dev-relay
+        url: wss://portal.gosuda.org/relay
+
+# Expected status:
+# status:
+#   phase: Ready
+#   publicURL: https://test-app.portal.gosuda.org
+#   tunnelPods:
+#     ready: 1
+#     total: 1
+#   relay:
+#     connected:
+#       - name: dev-relay
+#         status: Connected
