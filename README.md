@@ -51,7 +51,7 @@ Portal Expose Controller uses a two-resource model: `TunnelClass` defines tunnel
 
 ```bash
 # Install everything (CRDs, RBAC, controller, default TunnelClass)
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/001-portal-controller/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/install.yaml
 ```
 
 This installs:
@@ -292,7 +292,7 @@ spec:
 Install the controller with a single command:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/001-portal-controller/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/install.yaml
 ```
 
 This installs:
