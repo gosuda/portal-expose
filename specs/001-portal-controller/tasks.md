@@ -96,15 +96,15 @@ Standard kubebuilder project layout:
 
 ### Implementation for User Story 2
 
-- [ ] T037 [P] [US2] Implement TunnelClass lookup in controllers/portalexpose_controller.go (resolve from spec.tunnelClassName or default)
-- [ ] T038 [P] [US2] Implement default TunnelClass finder in controllers/portalexpose_controller.go (find by annotation portal.gosuda.org/is-default-class)
-- [ ] T039 [US2] Update Deployment builder to accept TunnelClass in internal/tunnel/deployment.go (apply replicas, nodeSelector, tolerations)
-- [ ] T040 [US2] Update reconciliation to pass TunnelClass to Deployment builder in controllers/portalexpose_controller.go
-- [ ] T041 [US2] Implement TunnelClass controller scaffold in controllers/tunnelclass_controller.go
-- [ ] T042 [US2] Implement TunnelClass watch to enqueue referencing PortalExposes in controllers/tunnelclass_controller.go
-- [ ] T043 [US2] Add index for PortalExposes by TunnelClass in controllers/portalexpose_controller.go (SetupWithManager)
-- [ ] T044 [US2] Update Deployment update logic to trigger rolling updates in controllers/portalexpose_controller.go (detect spec changes)
-- [ ] T045 [US2] Update status to show Progressing condition during rolling updates in controllers/portalexpose_controller.go
+- [X] T037 [P] [US2] Implement TunnelClass lookup in controllers/portalexpose_controller.go (resolve from spec.tunnelClassName or default)
+- [X] T038 [P] [US2] Implement default TunnelClass finder in controllers/portalexpose_controller.go (find by annotation portal.gosuda.org/is-default-class)
+- [X] T039 [US2] Update Deployment builder to accept TunnelClass in internal/tunnel/deployment.go (apply replicas, nodeSelector, tolerations)
+- [X] T040 [US2] Update reconciliation to pass TunnelClass to Deployment builder in controllers/portalexpose_controller.go
+- [X] T041 [US2] Implement TunnelClass controller scaffold in controllers/tunnelclass_controller.go
+- [X] T042 [US2] Implement TunnelClass watch to enqueue referencing PortalExposes in controllers/tunnelclass_controller.go
+- [X] T043 [US2] Add index for PortalExposes by TunnelClass in controllers/portalexpose_controller.go (SetupWithManager)
+- [X] T044 [US2] Update Deployment update logic to trigger rolling updates in controllers/portalexpose_controller.go (detect spec changes)
+- [X] T045 [US2] Update status to show Progressing condition during rolling updates in controllers/portalexpose_controller.go
 
 ### Integration Tests for User Story 2
 
@@ -125,13 +125,13 @@ Standard kubebuilder project layout:
 
 ### Implementation for User Story 3
 
-- [ ] T050 [P] [US3] Implement relay status computation in internal/tunnel/status.go (ComputeRelayStatuses from pod annotations/logs)
-- [ ] T051 [P] [US3] Update Deployment builder to configure multiple relay URLs in internal/tunnel/deployment.go (pass all targets to tunnel args)
-- [ ] T052 [US3] Update phase computation to handle partial relay failures in internal/tunnel/status.go (Degraded if some relays connected)
-- [ ] T053 [US3] Update reconciliation to populate status.relay.connected in controllers/portalexpose_controller.go
-- [ ] T054 [US3] Add RelayConnected condition to status in controllers/portalexpose_controller.go (True if all connected, False with details)
-- [ ] T055 [US3] Implement relay connection validation in internal/tunnel/validation.go (WSS URL format check)
-- [ ] T056 [US3] Update status to show per-relay connection states in controllers/portalexpose_controller.go (name, status, connectedAt, lastError)
+- [X] T050 [P] [US3] Implement relay status computation in internal/tunnel/status.go (ComputeRelayStatuses from pod annotations/logs)
+- [X] T051 [P] [US3] Update Deployment builder to configure multiple relay URLs in internal/tunnel/deployment.go (pass all targets to tunnel args)
+- [X] T052 [US3] Update phase computation to handle partial relay failures in internal/tunnel/status.go (Degraded if some relays connected)
+- [X] T053 [US3] Update reconciliation to populate status.relay.connected in controllers/portalexpose_controller.go
+- [X] T054 [US3] Add RelayConnected condition to status in controllers/portalexpose_controller.go (True if all connected, False with details)
+- [X] T055 [US3] Implement relay connection validation in internal/tunnel/validation.go (WSS URL format check)
+- [X] T056 [US3] Update status to show per-relay connection states in controllers/portalexpose_controller.go (name, status, connectedAt, lastError)
 
 ### Integration Tests for User Story 3
 
@@ -151,14 +151,14 @@ Standard kubebuilder project layout:
 
 ### Implementation for User Story 4
 
-- [ ] T060 [P] [US4] Implement pod readiness computation in internal/tunnel/status.go (count ready vs total pods from Deployment)
-- [ ] T061 [P] [US4] Implement condition timestamp management in internal/util/conditions.go (update lastTransitionTime only on state change)
-- [ ] T062 [US4] Update status to populate tunnelPods.ready and tunnelPods.total in controllers/portalexpose_controller.go
-- [ ] T063 [US4] Add TunnelDeploymentReady condition in controllers/portalexpose_controller.go (True if all pods ready)
-- [ ] T064 [US4] Add ServiceExists condition in controllers/portalexpose_controller.go (True if Service found, False with error)
-- [ ] T065 [US4] Add Available condition in controllers/portalexpose_controller.go (True if Ready/Degraded, False if Pending/Failed)
-- [ ] T066 [US4] Implement Degraded phase for partial pod failures in internal/tunnel/status.go (some pods ready but not all)
-- [ ] T067 [US4] Add actionable error messages to conditions in controllers/portalexpose_controller.go (include Service name, namespace, etc.)
+- [X] T060 [P] [US4] Implement pod readiness computation in internal/tunnel/status.go (count ready vs total pods from Deployment)
+- [X] T061 [P] [US4] Implement condition timestamp management in internal/util/conditions.go (update lastTransitionTime only on state change)
+- [X] T062 [US4] Update status to populate tunnelPods.ready and tunnelPods.total in controllers/portalexpose_controller.go
+- [X] T063 [US4] Add TunnelDeploymentReady condition in controllers/portalexpose_controller.go (True if all pods ready)
+- [X] T064 [US4] Add ServiceExists condition in controllers/portalexpose_controller.go (True if Service found, False with error)
+- [X] T065 [US4] Add Available condition in controllers/portalexpose_controller.go (True if Ready/Degraded, False if Pending/Failed)
+- [X] T066 [US4] Implement Degraded phase for partial pod failures in internal/tunnel/status.go (some pods ready but not all)
+- [X] T067 [US4] Add actionable error messages to conditions in controllers/portalexpose_controller.go (include Service name, namespace, etc.)
 
 ### Integration Tests for User Story 4
 
@@ -175,23 +175,23 @@ Standard kubebuilder project layout:
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T072 [P] Add RBAC role definitions in config/rbac/role.yaml (PortalExposes, TunnelClasses, Deployments, Services, Events)
-- [ ] T073 [P] Add RBAC role binding in config/rbac/role_binding.yaml
-- [ ] T074 [P] Create sample PortalExpose manifests in config/samples/ (basic, multi-relay, production)
-- [ ] T075 [P] Create sample TunnelClass manifests in config/samples/ (default, development, production)
-- [ ] T076 [P] Add controller manager configuration in config/manager/manager.yaml (replicas, resources, health probes)
+- [X] T072 [P] Add RBAC role definitions in config/rbac/role.yaml (PortalExposes, TunnelClasses, Deployments, Services, Events)
+- [X] T073 [P] Add RBAC role binding in config/rbac/role_binding.yaml
+- [X] T074 [P] Create sample PortalExpose manifests in config/samples/ (basic, multi-relay, production)
+- [X] T075 [P] Create sample TunnelClass manifests in config/samples/ (default, development, production)
+- [X] T076 [P] Add controller manager configuration in config/manager/manager.yaml (replicas, resources, health probes)
 - [ ] T077 [P] Implement exponential backoff for transient errors in controllers/portalexpose_controller.go (return error to trigger requeue)
 - [ ] T078 [P] Add metrics endpoint configuration in main.go (Prometheus metrics via controller-runtime)
 - [ ] T079 [P] Update main.go with structured logging setup (use controller-runtime logger)
 - [ ] T080 [P] Add unit tests for Deployment builder in internal/tunnel/deployment_test.go
 - [ ] T081 [P] Add unit tests for status computation in internal/tunnel/status_test.go
 - [ ] T082 [P] Add unit tests for validation logic in internal/tunnel/validation_test.go
-- [ ] T083 [P] Add unit tests for finalizer utilities in internal/util/finalizer_test.go
+- [X] T083 [P] Add unit tests for finalizer utilities in internal/util/finalizer_test.go
 - [ ] T084 [P] Add unit tests for condition utilities in internal/util/conditions_test.go
 - [ ] T085 Write E2E test suite setup in test/e2e/suite_test.go (real cluster deployment)
 - [ ] T086 Write E2E test for full PortalExpose lifecycle in test/e2e/suite_test.go (create, ready, delete)
 - [ ] T087 Add API documentation comments to CRD types in api/v1alpha1/ (kubebuilder markers for doc generation)
-- [ ] T088 Update README.md with installation instructions, usage examples, architecture overview
+- [X] T088 Update README.md with installation instructions, usage examples, architecture overview
 - [ ] T089 Run `make test` to verify all unit and integration tests pass
 - [ ] T090 Run `make manifests` and commit generated CRD YAMLs
 - [ ] T091 Run `gofmt` and `golint` to ensure Go code quality standards

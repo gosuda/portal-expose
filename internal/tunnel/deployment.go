@@ -30,7 +30,7 @@ import (
 
 const (
 	// TunnelImage is the default tunnel container image
-	TunnelImage = "ghcr.io/gosuda/portal-tunnel:latest"
+	TunnelImage = "ghcr.io/gosuda/portal-tunnel:1.0.0"
 )
 
 // BuildDeployment creates a Deployment spec for tunnel pods
