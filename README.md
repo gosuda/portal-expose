@@ -50,31 +50,47 @@ Portal Expose Controller uses a two-resource model: `TunnelClass` defines tunnel
 ### Install the Controller
 
 ```bash
-# Install CRDs
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/config/crd/bases/portal.gosuda.org_portalexposes.yaml
-
-# Install controller
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/config/deploy/controller.yaml
+# Install everything (CRDs, RBAC, controller, default TunnelClass)
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/001-portal-controller/install.yaml
 ```
+
+This installs:
+- Custom Resource Definitions (PortalExpose, TunnelClass)
+- RBAC permissions (ServiceAccount, ClusterRole, ClusterRoleBinding)
+- Controller deployment (ghcr.io/gosuda/portal-expose-controller:0.1.0)
+- Default TunnelClass for immediate use
 
 ### Expose Your First Service
 
 ```bash
 # Create a sample app
-kubectl create deployment hello-app --image=gcr.io/google-samples/hello-app:1.0
-kubectl expose deployment hello-app --port=8080
-
-# Install default TunnelClass
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/examples/tunnel-class.yaml
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --port=80
 
 # Expose it through Portal
-kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/main/examples/basic-expose.yaml
+kubectl apply -f - <<EOF
+apiVersion: portal.gosuda.org/v1alpha1
+kind: PortalExpose
+metadata:
+  name: my-nginx
+spec:
+  app:
+    name: my-nginx
+    service:
+      name: nginx
+      port: 80
+  relay:
+    targets:
+    - name: relay1
+      url: wss://portal.gosuda.org/relay
+EOF
 
 # Check status
-kubectl get portalexpose hello-app
+kubectl get portalexpose my-nginx
+kubectl get portalexpose my-nginx -o jsonpath='{.status.publicURL}'
 ```
 
-Your app should now be accessible at `https://hello-app.portal.gosuda.org`
+Your app should now be accessible at the public URL shown in the status
 
 ## Usage
 
@@ -271,6 +287,39 @@ spec:
 
 ## Installation
 
+### Quick Install (Recommended)
+
+Install the controller with a single command:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/gosuda/portal-expose/001-portal-controller/install.yaml
+```
+
+This installs:
+- **CRDs**: PortalExpose and TunnelClass custom resources
+- **RBAC**: ServiceAccount, ClusterRole, and ClusterRoleBinding
+- **Controller**: Deployment running `ghcr.io/gosuda/portal-expose-controller:0.1.0`
+- **Default TunnelClass**: Ready-to-use tunnel configuration
+
+**Supported Platforms**: linux/amd64, linux/arm64
+
+**Tunnel Image**: `ghcr.io/gosuda/portal-tunnel:1.0.0`
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+
+### Verify Installation
+
+```bash
+# Check controller pod
+kubectl get pods -n portal-expose-system
+
+# Check CRDs
+kubectl get crd | grep portal.gosuda.org
+
+# Check default TunnelClass
+kubectl get tunnelclass
+```
+
 ### From Source
 
 ```bash
@@ -304,7 +353,7 @@ The controller can be configured via environment variables or command-line flags
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TUNNEL_IMAGE` | `ghcr.io/gosuda/portal-tunnel:latest` | Tunnel container image (managed by controller) |
+| `TUNNEL_IMAGE` | `ghcr.io/gosuda/portal-tunnel:1.0.0` | Tunnel container image (managed by controller) |
 | `TUNNEL_VERSION` | `latest` | Tunnel image version tag |
 | `DEFAULT_RELAY_URL` | `wss://portal.gosuda.org/relay` | Default relay if not specified |
 | `METRICS_ADDR` | `:8080` | Metrics endpoint address |
