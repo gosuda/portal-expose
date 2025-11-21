@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- portal_v1alpha1_portalexpose.yaml
+- portal_v1alpha1_tunnelclass.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
