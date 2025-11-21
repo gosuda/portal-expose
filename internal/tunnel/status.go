@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	portalv1alpha1 "github.com/gosuda/portal-expose/api/v1alpha1"
+	"github.com/gosuda/portal-expose/internal/util"
 )
 
 // ConstructPublicURL builds the public URL from app name and relay domain
@@ -53,23 +54,23 @@ func ComputePhase(readyPods, totalPods int32, relayConnected, totalRelays int) s
 
 	// Ready: all pods ready AND all relays connected
 	if allPodsReady && allRelaysConnected {
-		return "Ready"
+		return util.PhaseReady
 	}
 
 	// Degraded: some pods ready OR some relays connected
 	if somePodsReady || someRelaysConnected {
-		return "Degraded"
+		return util.PhaseDegraded
 	}
 
 	// Pending: initial state, waiting for pods/relays
 	// Also used when tunnel Deployment is being created
 	if readyPods == 0 && totalPods > 0 {
-		return "Pending"
+		return util.PhasePending
 	}
 
 	// Failed: no pods ready OR no relays connected
 	// Also Failed if Service not found (checked by caller)
-	return "Failed"
+	return util.PhaseFailed
 }
 
 // ComputeRelayStatuses generates relay connection statuses

@@ -96,7 +96,7 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	if err := r.Get(ctx, serviceKey, service); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Service not found", "service", portalExpose.Spec.App.Service.Name)
-			portalExpose.Status.Phase = "Failed"
+			portalExpose.Status.Phase = util.PhaseFailed
 			util.SetCondition(&portalExpose.Status.Conditions, util.ConditionServiceExists, metav1.ConditionFalse,
 				"ServiceNotFound", fmt.Sprintf("Service '%s' not found in namespace '%s'", portalExpose.Spec.App.Service.Name, portalExpose.Namespace))
 			util.SetCondition(&portalExpose.Status.Conditions, util.ConditionAvailable, metav1.ConditionFalse,
@@ -122,7 +122,7 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	tunnelClass, err := r.resolveTunnelClass(ctx, portalExpose)
 	if err != nil {
 		logger.Error(err, "Failed to resolve TunnelClass")
-		portalExpose.Status.Phase = "Failed"
+		portalExpose.Status.Phase = util.PhaseFailed
 		util.SetCondition(&portalExpose.Status.Conditions, "TunnelClassExists", metav1.ConditionFalse,
 			"TunnelClassNotFound", err.Error())
 
@@ -159,7 +159,7 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
-		portalExpose.Status.Phase = "Pending"
+		portalExpose.Status.Phase = util.PhasePending
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionProgressing, metav1.ConditionTrue,
 			"DeploymentCreated", "Tunnel Deployment created, waiting for pods")
 
@@ -201,36 +201,76 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// 7. Compute status from Deployment
+	// 7. Update status from Deployment and emit events
+	return r.updateStatusFromDeployment(ctx, portalExpose, existingDeployment, tunnelClass)
+}
+
+// updateStatusFromDeployment computes and updates the status based on Deployment state
+func (r *PortalExposeReconciler) updateStatusFromDeployment(
+	ctx context.Context,
+	portalExpose *portalv1alpha1.PortalExpose,
+	existingDeployment *appsv1.Deployment,
+	tunnelClass *portalv1alpha1.TunnelClass,
+) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
 	readyReplicas := existingDeployment.Status.ReadyReplicas
 	desiredReplicas := tunnelClass.Spec.Replicas
 
 	portalExpose.Status.TunnelPods.Ready = readyReplicas
 	portalExpose.Status.TunnelPods.Total = desiredReplicas
 
-	// 8. Compute relay connection status (simplified for MVP)
+	// Compute relay connection status (simplified for MVP)
 	podsReady := (readyReplicas > 0)
 	relayStatuses := tunnel.ComputeRelayStatuses(portalExpose.Spec.Relay.Targets, podsReady)
 	portalExpose.Status.Relay.Connected = relayStatuses
 
-	// 9. Compute phase
+	// Compute phase
+	connectedRelays := countConnectedRelays(relayStatuses)
+	portalExpose.Status.Phase = tunnel.ComputePhase(readyReplicas, desiredReplicas, connectedRelays, len(relayStatuses))
+
+	// Ensure public URL is set
+	if portalExpose.Status.PublicURL == "" {
+		primaryRelayURL := portalExpose.Spec.Relay.Targets[0].URL
+		portalExpose.Status.PublicURL = tunnel.ConstructPublicURL(portalExpose.Spec.App.Name, primaryRelayURL)
+	}
+
+	// Update conditions
+	r.updateConditions(portalExpose, existingDeployment, readyReplicas, desiredReplicas, connectedRelays, len(relayStatuses))
+
+	// Update status
+	if err := r.Status().Update(ctx, portalExpose); err != nil {
+		logger.Error(err, "Failed to update status")
+		return ctrl.Result{}, err
+	}
+
+	// Emit events for phase changes
+	r.emitPhaseEvents(portalExpose, readyReplicas, desiredReplicas, connectedRelays, len(relayStatuses))
+
+	logger.Info("Reconciliation complete", "phase", portalExpose.Status.Phase)
+	return ctrl.Result{}, nil
+}
+
+// countConnectedRelays counts the number of connected relays
+func countConnectedRelays(relayStatuses []portalv1alpha1.RelayConnectionStatus) int {
 	connectedRelays := 0
 	for _, rs := range relayStatuses {
 		if rs.Status == "Connected" {
 			connectedRelays++
 		}
 	}
-	portalExpose.Status.Phase = tunnel.ComputePhase(readyReplicas, desiredReplicas, connectedRelays, len(relayStatuses))
+	return connectedRelays
+}
 
-	// 10. Ensure public URL is set
-	if portalExpose.Status.PublicURL == "" {
-		primaryRelayURL := portalExpose.Spec.Relay.Targets[0].URL
-		portalExpose.Status.PublicURL = tunnel.ConstructPublicURL(portalExpose.Spec.App.Name, primaryRelayURL)
-	}
-
-	// 11. Update conditions
+// updateConditions updates all status conditions based on current state
+func (r *PortalExposeReconciler) updateConditions(
+	portalExpose *portalv1alpha1.PortalExpose,
+	existingDeployment *appsv1.Deployment,
+	readyReplicas, desiredReplicas int32,
+	connectedRelays, totalRelays int,
+) {
 	allPodsReady := (readyReplicas == desiredReplicas && desiredReplicas > 0)
-	allRelaysConnected := (connectedRelays == len(relayStatuses) && len(relayStatuses) > 0)
+	allRelaysConnected := (connectedRelays == totalRelays && totalRelays > 0)
 
 	if allPodsReady {
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionTunnelDeploymentReady, metav1.ConditionTrue,
@@ -242,13 +282,13 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	if allRelaysConnected {
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionRelayConnected, metav1.ConditionTrue,
-			"AllRelaysConnected", fmt.Sprintf("Connected to %d/%d relays", connectedRelays, len(relayStatuses)))
+			"AllRelaysConnected", fmt.Sprintf("Connected to %d/%d relays", connectedRelays, totalRelays))
 	} else {
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionRelayConnected, metav1.ConditionFalse,
-			"PartialRelayConnection", fmt.Sprintf("Only %d/%d relays connected", connectedRelays, len(relayStatuses)))
+			"PartialRelayConnection", fmt.Sprintf("Only %d/%d relays connected", connectedRelays, totalRelays))
 	}
 
-	if portalExpose.Status.Phase == "Ready" || portalExpose.Status.Phase == "Degraded" {
+	if portalExpose.Status.Phase == util.PhaseReady || portalExpose.Status.Phase == util.PhaseDegraded {
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionAvailable, metav1.ConditionTrue,
 			"PortalExposeAvailable", "PortalExpose is available")
 	} else {
@@ -264,29 +304,27 @@ func (r *PortalExposeReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		util.SetCondition(&portalExpose.Status.Conditions, util.ConditionProgressing, metav1.ConditionFalse,
 			"DeploymentStable", "No rolling update in progress")
 	}
+}
 
-	// 12. Update status
-	if err := r.Status().Update(ctx, portalExpose); err != nil {
-		logger.Error(err, "Failed to update status")
-		return ctrl.Result{}, err
-	}
-
-	// 13. Emit events for phase changes
+// emitPhaseEvents emits events based on the current phase
+func (r *PortalExposeReconciler) emitPhaseEvents(
+	portalExpose *portalv1alpha1.PortalExpose,
+	readyReplicas, desiredReplicas int32,
+	connectedRelays, totalRelays int,
+) {
 	// Note: In production, we'd track previous phase to only emit on changes
-	if portalExpose.Status.Phase == "Ready" {
+	switch portalExpose.Status.Phase {
+	case util.PhaseReady:
 		r.Recorder.Event(portalExpose, corev1.EventTypeNormal, "Ready",
 			"All tunnel pods and relays are healthy")
-	} else if portalExpose.Status.Phase == "Degraded" {
+	case util.PhaseDegraded:
 		r.Recorder.Event(portalExpose, corev1.EventTypeWarning, "Degraded",
 			fmt.Sprintf("Partial failure: %d/%d pods ready, %d/%d relays connected",
-				readyReplicas, desiredReplicas, connectedRelays, len(relayStatuses)))
-	} else if portalExpose.Status.Phase == "Failed" {
+				readyReplicas, desiredReplicas, connectedRelays, totalRelays))
+	case util.PhaseFailed:
 		r.Recorder.Event(portalExpose, corev1.EventTypeWarning, "Failed",
 			"All tunnel pods or relays unavailable")
 	}
-
-	logger.Info("Reconciliation complete", "phase", portalExpose.Status.Phase)
-	return ctrl.Result{}, nil
 }
 
 // handleDeletion handles cleanup when PortalExpose is being deleted

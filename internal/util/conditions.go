@@ -22,6 +22,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Phase constants for PortalExpose status
+const (
+	PhaseReady    = "Ready"
+	PhasePending  = "Pending"
+	PhaseDegraded = "Degraded"
+	PhaseFailed   = "Failed"
+)
+
 // Condition type constants
 const (
 	// ConditionAvailable indicates the PortalExpose is Ready or Degraded
