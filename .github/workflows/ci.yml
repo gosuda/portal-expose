@@ -11,7 +11,7 @@ on:
 
 jobs:
   lint:
-    name: Lint, tests and build
+    name: Build
     runs-on: depot-ubuntu-24.04-4
     steps:
       - uses: actions/checkout@v4
@@ -39,10 +39,17 @@ jobs:
           flags: unittests
           name: codecov-umbrella
 
-      - name: Build
-        run: make build
+      - name: Build and verify generated sources
+        run: |
+          make build
+          git diff --exit-code
+          untracked="$(git ls-files --others --exclude-standard)"
+          if [ -n "$untracked" ]; then
+            printf 'Uncommitted generated files:\n%s\n' "$untracked"
+            exit 1
+          fi
   build:
-    name: Build
+    name: Publish image
     runs-on: depot-ubuntu-24.04-4
     permissions:
       contents: read
@@ -87,5 +94,5 @@ jobs:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
