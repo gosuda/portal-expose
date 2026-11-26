@@ -389,6 +389,9 @@ go mod download
 # Generate CRDs and code
 make generate manifests
 
+# Check the published installer against generated CRDs and controller permissions
+make verify-installer
+
 # Run tests
 make test
 

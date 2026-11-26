@@ -41,7 +41,7 @@ jobs:
 
       - name: Build and verify generated sources
         run: |
-          make build
+          make build verify-installer
           git diff --exit-code
           untracked="$(git ls-files --others --exclude-standard)"
           if [ -n "$untracked" ]; then
