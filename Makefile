@@ -140,6 +140,10 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm portal-expose-builder
 	rm Dockerfile.cross
 
+.PHONY: verify-installer
+verify-installer: manifests ## Verify the published installer against generated APIs and permissions.
+	go run ./hack/verify-installer
+
 .PHONY: build-installer
 build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
 	mkdir -p dist
