@@ -1,13 +1,14 @@
 name: E2E Tests
 
 on:
-  push:
-  pull_request:
+  schedule:
+    - cron: 41 4 * * 1
+  workflow_dispatch:
 
 jobs:
   test-e2e:
     name: Run on Ubuntu
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-4
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
@@ -30,3 +31,9 @@ jobs:
         run: |
           go mod tidy
           make test-e2e
+
+permissions:
+  contents: read
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
